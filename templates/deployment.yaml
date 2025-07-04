@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ubuntu-ssh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ubuntu-ssh
+  template:
+    metadata:
+      labels:
+        app: ubuntu-ssh
+    spec:
+      containers:
+        - name: ubuntu
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              apt update && apt install -y sudo openssh-server vim bash procps net-tools;
+              useradd -m -s /bin/bash {{ .Values.ssh.user }};
+              echo "{{ .Values.ssh.user }} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;
+              mkdir -p /home/{{ .Values.ssh.user }}/.ssh;
+              cp /mnt/keys/id_rsa.pub /home/{{ .Values.ssh.user }}/.ssh/authorized_keys;
+              chown -R {{ .Values.ssh.user }}:{{ .Values.ssh.user }} /home/{{ .Values.ssh.user }}/.ssh;
+              chmod 700 /home/{{ .Values.ssh.user }}/.ssh;
+              chmod 600 /home/{{ .Values.ssh.user }}/.ssh/authorized_keys;
+              mkdir -p /var/run/sshd;
+              sed -i 's/#Port 22/Port {{ .Values.ssh.port }}/' /etc/ssh/sshd_config;
+              sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config;
+              sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config;
+              /usr/sbin/sshd -D;
+          ports:
+            - containerPort: {{ .Values.ssh.port }}
+          volumeMounts:
+            - name: ssh-key-vol
+              mountPath: /mnt/keys
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}
+      volumes:
+        - name: ssh-key-vol
+          secret:
+            secretName: ssh-key-secret
