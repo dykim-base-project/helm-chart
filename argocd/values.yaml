@@ -1,0 +1,19 @@
+server:
+  service:
+    type: NodePort
+    nodePortHttp: 30080
+    nodePortHttps: 30443
+
+  ingress:
+    enabled: false
+
+configs:
+  secret:
+    argocdServerAdminPassword: "$2y$05$9Y8SNG0Z0NkfE1KXyF.Xkuvn6ZaSmjglF6Bgfs9R6IzkIQcb9UOD2"  # "admin123"
+    argocdServerAdminPasswordMtime: "2025-07-04T12:34:56Z"
+  cm:
+    admin.enabled: "true"
+
+global:
+  image:
+    tag: v2.12.3+6b9cd82
