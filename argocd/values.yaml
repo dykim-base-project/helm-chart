@@ -8,12 +8,9 @@ server:
     enabled: false
 
 configs:
-  secret:
-    argocdServerAdminPassword: "$2y$05$9Y8SNG0Z0NkfE1KXyF.Xkuvn6ZaSmjglF6Bgfs9R6IzkIQcb9UOD2"  # "admin123"
-    argocdServerAdminPasswordMtime: "2025-07-04T12:34:56Z"
+  # FixME: 아래 설정 적용 시, 어드민 암호가 아예 적용되지 않음. 수정 필요...
+#  secret:
+#    argocdServerAdminPassword: "$2y$10$Gi.Ri69Cr9VYobqjDBy1YO2/9T1C1CVmAxk5YtNS8XtEDB5AX1gHS" # admin!23
+#    argocdServerAdminPasswordMtime: "1999-12-31T23:59:59Z" # 비밀번호 변경을 감지하기 위한 임의 과거 날짜
   cm:
-    admin.enabled: "true"
-
-global:
-  image:
-    tag: v2.12.3+6b9cd82
+    admin.enabled: true
