@@ -33,6 +33,8 @@ spec:
       containers:
         - name: ubuntu
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          command: [ "sleep" ]
+          args: [ "infinity" ]
           ports:
             - containerPort: {{ .Values.ssh.port }}
           volumeMounts:
