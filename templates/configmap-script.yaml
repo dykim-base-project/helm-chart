@@ -6,21 +6,28 @@ metadata:
 data:
   setup.sh: |
     #!/bin/bash
-    set -e
+    set -euo pipefail
 
-    echo "[INFO] Installing packages..."
-    apt update && DEBIAN_FRONTEND=noninteractive apt install -y sudo openssh-server vim bash
+    log() { echo "[INFO] $1"; }
+    fail() { echo "[ERROR] $1" >&2; exit 1; }
 
-    echo "[INFO] Creating user..."
-    useradd -m -s /bin/bash {{ .Values.ssh.user }}
-    echo "{{ .Values.ssh.user }} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    log "Installing packages..."
+    apt update && DEBIAN_FRONTEND=noninteractive apt install -y sudo openssh-server vim bash || fail "Package installation failed"
 
-    echo "[INFO] Setting up SSH..."
-    mkdir -p /home/{{ .Values.ssh.user }}/.ssh
-    cp /mnt/keys/id_rsa.pub /home/{{ .Values.ssh.user }}/.ssh/authorized_keys
-    chmod 700 /home/{{ .Values.ssh.user }}/.ssh
-    chmod 600 /home/{{ .Values.ssh.user }}/.ssh/authorized_keys
-    chown -R 1001:1001 /home/{{ .Values.ssh.user }}/.ssh
+    log "Creating user..."
+    id {{ .Values.ssh.user }} >/dev/null 2>&1 || useradd -m -s /bin/bash {{ .Values.ssh.user }} || fail "User creation failed"
+    echo "{{ .Values.ssh.user }} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers || fail "Failed to modify sudoers"
 
-    mkdir -p /var/run/sshd
+    log "Setting up SSH..."
+
+    mkdir -p /home/{{ .Values.ssh.user }}/.ssh || fail "Failed to create .ssh directory"
+    if [[ ! -f /mnt/keys/id_rsa.pub ]]; then
+    fail "Public key not found at /mnt/keys/id_rsa.pub"
+    fi
+    cp /mnt/keys/id_rsa.pub /home/{{ .Values.ssh.user }}/.ssh/authorized_keys || fail "Failed to copy public key"
+    chmod 700 /home/{{ .Values.ssh.user }}/.ssh || fail "chmod 700 failed"
+    chmod 600 /home/{{ .Values.ssh.user }}/.ssh/authorized_keys || fail "chmod 600 failed"
+    chown -R 1001:1001 /home/{{ .Values.ssh.user }}/.ssh || fail "chown failed"
+
+    mkdir -p /var/run/sshd || fail "Failed to create /var/run/sshd"
 
