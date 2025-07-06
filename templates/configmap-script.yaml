@@ -18,7 +18,6 @@ data:
     echo "{{ .Values.ssh.user }} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
     echo "[INFO] Setting up SSH..."
-
     mkdir -p /home/{{ .Values.ssh.user }}/.ssh
 
     if [ ! -f /mnt/keys/id_rsa.pub ]; then
@@ -31,8 +30,12 @@ data:
     chmod 600 /home/{{ .Values.ssh.user }}/.ssh/authorized_keys
     chown -R 1001:1001 /home/{{ .Values.ssh.user }}/.ssh
 
+    echo "[INFO] Preparing /var/run/sshd..."
     mkdir -p /var/run/sshd
+    chown root:root /var/run/sshd
+    chmod 0755 /var/run/sshd
 
     echo "[INFO] Starting SSH daemon..."
     exec /usr/sbin/sshd -D
+
 
