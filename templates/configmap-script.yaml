@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ubuntu-ssh-setup
+  name: ubuntu-ssh-init-script
   namespace: sample
 data:
   setup.sh: |
@@ -9,25 +9,18 @@ data:
     set -e
 
     echo "[INFO] Installing packages..."
-    apt update
-    DEBIAN_FRONTEND=noninteractive apt install -y sudo openssh-server vim bash procps net-tools
+    apt update && DEBIAN_FRONTEND=noninteractive apt install -y sudo openssh-server vim bash
 
     echo "[INFO] Creating user..."
     useradd -m -s /bin/bash {{ .Values.ssh.user }}
     echo "{{ .Values.ssh.user }} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-    echo "[INFO] Setting up SSH directory..."
+    echo "[INFO] Setting up SSH..."
     mkdir -p /home/{{ .Values.ssh.user }}/.ssh
     cp /mnt/keys/id_rsa.pub /home/{{ .Values.ssh.user }}/.ssh/authorized_keys
-    chown -R {{ .Values.ssh.user }}:{{ .Values.ssh.user }} /home/{{ .Values.ssh.user }}/.ssh
     chmod 700 /home/{{ .Values.ssh.user }}/.ssh
     chmod 600 /home/{{ .Values.ssh.user }}/.ssh/authorized_keys
+    chown -R 1001:1001 /home/{{ .Values.ssh.user }}/.ssh
 
-    echo "[INFO] SSH config..."
     mkdir -p /var/run/sshd
-    sed -i 's/#Port 22/Port {{ .Values.ssh.port }}/' /etc/ssh/sshd_config
-    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
-    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
 
-    echo "[INFO] Starting sshd..."
-    /usr/sbin/sshd -D

@@ -1,6 +1,5 @@
 apiVersion: v2
 name: ubuntu-ssh
-description: Ubuntu + SSH + Sudo User Helm Chart
-type: application
 version: 0.1.0
-appVersion: "22.04"
+description: Ubuntu 22.04 with SSH and sudo user (using initContainer setup)
+type: application

@@ -13,20 +13,51 @@ spec:
       labels:
         app: ubuntu-ssh
     spec:
+      initContainers:
+        - name: setup-env
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          command: ["/bin/bash", "/mnt/scripts/setup.sh"]
+          volumeMounts:
+            - name: ssh-script
+              mountPath: /mnt/scripts
+            - name: rootfs
+              mountPath: /home/{{ .Values.ssh.user }}
+              subPath: {{ .Values.ssh.user }}
+            - name: etc-ssh
+              mountPath: /etc/ssh
+            - name: run-sshd
+              mountPath: /var/run/sshd
+            - name: ssh-keys
+              mountPath: /mnt/keys
       containers:
         - name: ubuntu
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: IfNotPresent
-          command: ["/bin/bash", "/mnt/setup/setup.sh"]
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           ports:
             - containerPort: {{ .Values.ssh.port }}
           volumeMounts:
-            - name: ssh-key
-              mountPath: /mnt/keys
-              readOnly: true
-            - name: setup-script
-              mountPath: /mnt/setup
-              readOnly: true
+            - name: rootfs
+              mountPath: /home/{{ .Values.ssh.user }}
+              subPath: {{ .Values.ssh.user }}
+            - name: etc-ssh
+              mountPath: /etc/ssh
+            - name: run-sshd
+              mountPath: /var/run/sshd
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.ssh.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.ssh.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.ssh.port }}
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            failureThreshold: 30
           resources:
             requests:
               cpu: {{ .Values.resources.requests.cpu }}
@@ -34,37 +65,17 @@ spec:
             limits:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
-          readinessProbe:
-            tcpSocket:
-              port: {{ .Values.ssh.port }}
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 2
-            successThreshold: 1
-            failureThreshold: 3
-
-          livenessProbe:
-            tcpSocket:
-              port: {{ .Values.ssh.port }}
-            initialDelaySeconds: 10
-            periodSeconds: 20
-            timeoutSeconds: 2
-            successThreshold: 1
-            failureThreshold: 5
-
-          startupProbe:
-            tcpSocket:
-              port: {{ .Values.ssh.port }}
-            initialDelaySeconds: 0
-            periodSeconds: 5
-            timeoutSeconds: 2
-            successThreshold: 1
-            failureThreshold: 30
       volumes:
-        - name: ssh-key
+        - name: ssh-script
+          configMap:
+            name: ubuntu-ssh-init-script
+            defaultMode: 0755
+        - name: rootfs
+          emptyDir: {}
+        - name: etc-ssh
+          emptyDir: {}
+        - name: run-sshd
+          emptyDir: {}
+        - name: ssh-keys
           secret:
             secretName: ssh-key-secret
-        - name: setup-script
-          configMap:
-            name: ubuntu-ssh-setup
-            defaultMode: 0755
