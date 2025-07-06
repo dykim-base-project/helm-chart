@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ubuntu-ssh
+  namespace: sample
 spec:
   replicas: 1
   selector:
@@ -16,27 +17,16 @@ spec:
         - name: ubuntu
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: IfNotPresent
-          command: ["/bin/bash", "-c"]
-          args:
-            - |
-              apt update && apt install -y sudo openssh-server vim bash procps net-tools;
-              useradd -m -s /bin/bash {{ .Values.ssh.user }};
-              echo "{{ .Values.ssh.user }} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers;
-              mkdir -p /home/{{ .Values.ssh.user }}/.ssh;
-              cp /mnt/keys/id_rsa.pub /home/{{ .Values.ssh.user }}/.ssh/authorized_keys;
-              chown -R {{ .Values.ssh.user }}:{{ .Values.ssh.user }} /home/{{ .Values.ssh.user }}/.ssh;
-              chmod 700 /home/{{ .Values.ssh.user }}/.ssh;
-              chmod 600 /home/{{ .Values.ssh.user }}/.ssh/authorized_keys;
-              mkdir -p /var/run/sshd;
-              sed -i 's/#Port 22/Port {{ .Values.ssh.port }}/' /etc/ssh/sshd_config;
-              sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config;
-              sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config;
-              /usr/sbin/sshd -D;
+          command: ["/bin/bash", "/mnt/setup/setup.sh"]
           ports:
             - containerPort: {{ .Values.ssh.port }}
           volumeMounts:
-            - name: ssh-key-vol
+            - name: ssh-key
               mountPath: /mnt/keys
+              readOnly: true
+            - name: setup-script
+              mountPath: /mnt/setup
+              readOnly: true
           resources:
             requests:
               cpu: {{ .Values.resources.requests.cpu }}
@@ -44,7 +34,37 @@ spec:
             limits:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.ssh.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 3
+
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.ssh.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 5
+
+          startupProbe:
+            tcpSocket:
+              port: {{ .Values.ssh.port }}
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 2
+            successThreshold: 1
+            failureThreshold: 30
       volumes:
-        - name: ssh-key-vol
+        - name: ssh-key
           secret:
             secretName: ssh-key-secret
+        - name: setup-script
+          configMap:
+            name: ubuntu-ssh-setup
+            defaultMode: 0755
