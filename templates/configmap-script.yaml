@@ -13,7 +13,7 @@ data:
 
     echo "[INFO] Creating user..."
     if ! id ubuntu >/dev/null 2>&1; then
-    useradd -m -s /bin/bash ubuntu
+      useradd -m -s /bin/bash ubuntu
     fi
     echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
@@ -21,8 +21,8 @@ data:
     mkdir -p /home/ubuntu/.ssh
 
     if [ ! -f /mnt/keys/id_rsa.pub ]; then
-    echo "[ERROR] Missing /mnt/keys/id_rsa.pub" >&2
-    exit 1
+      echo "[ERROR] Missing /mnt/keys/id_rsa.pub" >&2
+      exit 1
     fi
 
     cp /mnt/keys/id_rsa.pub /home/ubuntu/.ssh/authorized_keys
@@ -35,7 +35,4 @@ data:
     chown root:root /var/run/sshd
     chmod 0755 /var/run/sshd
 
-    echo "[INFO] Init container complete. Exiting..."
-
-
-
+    echo "[INFO] Init container complete."

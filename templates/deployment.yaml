@@ -14,6 +14,22 @@ spec:
       labels:
         app: ubuntu-ssh
     spec:
+      volumes:
+        - name: ssh-script
+          configMap:
+            name: ubuntu-ssh-init-script
+            defaultMode: 0755
+        - name: rootfs
+          emptyDir: {}
+        - name: etc-ssh
+          emptyDir: {}
+        - name: run-sshd
+          emptyDir: {}
+        - name: ssh-keys
+          secret:
+            secretName: ssh-key-secret
+        - name: logs
+          emptyDir: {}
       initContainers:
         - name: setup-env
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -33,8 +49,8 @@ spec:
       containers:
         - name: ubuntu
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          command: [ "sleep" ]
-          args: [ "infinity" ]
+          command: ["sleep"]
+          args: ["infinity"]
           ports:
             - containerPort: {{ .Values.ssh.port }}
           volumeMounts:
@@ -45,6 +61,10 @@ spec:
               mountPath: /etc/ssh
             - name: run-sshd
               mountPath: /var/run/sshd
+            - name: ssh-keys
+              mountPath: /mnt/keys
+            - name: logs
+              mountPath: /var/log/poststart
           readinessProbe:
             tcpSocket:
               port: {{ .Values.ssh.port }}
@@ -75,19 +95,12 @@ spec:
                   - /bin/sh
                   - -c
                   - |
-                    echo "[INFO] Launching SSHD from postStart..."
-                    /usr/sbin/sshd -D &
-      volumes:
-        - name: ssh-script
-          configMap:
-            name: ubuntu-ssh-init-script
-            defaultMode: 0755
-        - name: rootfs
-          emptyDir: {}
-        - name: etc-ssh
-          emptyDir: {}
-        - name: run-sshd
-          emptyDir: {}
-        - name: ssh-keys
-          secret:
-            secretName: ssh-key-secret
+                    echo "[INFO] Launching SSHD from postStart..." >> /var/log/poststart/post.log
+                    /usr/sbin/sshd -D >> /var/log/poststart/post.log 2>&1 &
+        - name: log-sidecar
+          image: busybox
+          command: ["/bin/sh", "-c"]
+          args: ["tail -n+1 -F /var/log/poststart/post.log"]
+          volumeMounts:
+            - name: logs
+              mountPath: /var/log/poststart
