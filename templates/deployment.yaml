@@ -4,6 +4,7 @@ metadata:
   name: ubuntu-ssh
   namespace: sample
 spec:
+  revisionHistoryLimit: 3
   replicas: 1
   selector:
     matchLabels:
