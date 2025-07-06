@@ -12,30 +12,30 @@ data:
     apt update && DEBIAN_FRONTEND=noninteractive apt install -y sudo openssh-server vim bash
 
     echo "[INFO] Creating user..."
-    if ! id "{{ .Values.ssh.user }}" >/dev/null 2>&1; then
-    useradd -m -s /bin/bash {{ .Values.ssh.user }}
+    if ! id ubuntu >/dev/null 2>&1; then
+    useradd -m -s /bin/bash ubuntu
     fi
-    echo "{{ .Values.ssh.user }} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+    echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
     echo "[INFO] Setting up SSH..."
-    mkdir -p /home/{{ .Values.ssh.user }}/.ssh
+    mkdir -p /home/ubuntu/.ssh
 
     if [ ! -f /mnt/keys/id_rsa.pub ]; then
     echo "[ERROR] Missing /mnt/keys/id_rsa.pub" >&2
     exit 1
     fi
 
-    cp /mnt/keys/id_rsa.pub /home/{{ .Values.ssh.user }}/.ssh/authorized_keys
-    chmod 700 /home/{{ .Values.ssh.user }}/.ssh
-    chmod 600 /home/{{ .Values.ssh.user }}/.ssh/authorized_keys
-    chown -R 1001:1001 /home/{{ .Values.ssh.user }}/.ssh
+    cp /mnt/keys/id_rsa.pub /home/ubuntu/.ssh/authorized_keys
+    chmod 700 /home/ubuntu/.ssh
+    chmod 600 /home/ubuntu/.ssh/authorized_keys
+    chown -R 1001:1001 /home/ubuntu/.ssh
 
-    echo "[INFO] Preparing /var/run/sshd..."
+    echo "[INFO] Fixing /var/run/sshd permissions..."
     mkdir -p /var/run/sshd
     chown root:root /var/run/sshd
     chmod 0755 /var/run/sshd
 
-    echo "[INFO] Starting SSH daemon..."
-    exec /usr/sbin/sshd -D
+    echo "[INFO] Init container complete. Exiting..."
+
 
 

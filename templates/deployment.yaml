@@ -68,6 +68,15 @@ spec:
             limits:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    echo "[INFO] Launching SSHD from postStart..."
+                    /usr/sbin/sshd -D &
       volumes:
         - name: ssh-script
           configMap:
