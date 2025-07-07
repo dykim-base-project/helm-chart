@@ -4,7 +4,7 @@ image:
 
 ssh:
   user: ubuntu
-  port: 2222
+  port: 22
   publicKey: |
     ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDFoNXUgNF7BS17x5sSbHs3iSDTzJJk5uYd3zx4TwBU2hZXWO/qyC51l1PeZ4mMjjpMuYtmcfjQy8oOJYyNYhPX39wZjKw9YqguDOm4hHtf2QPU6EmEbGYvuNsWCyxGyAt108F9Z92Th/PWMognbVXlBhjOs1IQZ6yqSVSNl/xFxh9xDjMupHONTN9P+kOW73//gpiDAireLNp0p0J2jsFVnqMouRc2H5VAbs0xqvNtIvnZiANNgbxoS7WhAmVxY2LrRcGxHyLCs59eFADdAuxmnuJ8HzrIq8uUTi/P568/ZU16eZC7uMDljXW9x2NHF4DlwluM/Rcjx73nrvI/OaKr USER@MacBook-Air.local
 
