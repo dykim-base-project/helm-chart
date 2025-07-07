@@ -27,6 +27,9 @@ data:
     chown root:root /var/run/sshd
     chmod 0755 /var/run/sshd
 
+    echo "[INFO] Creating sshd user if not exists..."
+    id sshd 2>/dev/null || useradd -r -s /usr/sbin/nologin -d /var/run/sshd sshd
+
     echo "[INFO] Copying sshd binary for postStart..."
     cp /usr/sbin/sshd /mnt/ssh-bin/sshd
 
