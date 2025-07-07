@@ -30,6 +30,8 @@ spec:
             secretName: ssh-key-secret
         - name: logs
           emptyDir: {}
+        - name: ssh-binary
+          emptyDir: { }
       initContainers:
         - name: setup-env
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -46,6 +48,8 @@ spec:
               mountPath: /etc/ssh
             - name: run-sshd
               mountPath: /var/run/sshd
+            - name: ssh-binary
+              mountPath: /mnt/ssh-bin
       containers:
         - name: ubuntu
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -65,6 +69,8 @@ spec:
               mountPath: /mnt/keys
             - name: logs
               mountPath: /var/log/poststart
+            - name: ssh-binary
+              mountPath: /mnt/ssh-bin
           readinessProbe:
             tcpSocket:
               port: {{ .Values.ssh.port }}
