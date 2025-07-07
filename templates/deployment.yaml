@@ -102,7 +102,7 @@ spec:
                   - -c
                   - |
                     echo "[INFO] Launching SSHD from postStart..." >> /var/log/poststart/post.log
-                    /usr/sbin/sshd -D >> /var/log/poststart/post.log 2>&1 &
+                    /mnt/ssh-bin/sshd -D >> /var/log/poststart/post.log 2>&1 &
         - name: log-sidecar
           image: busybox
           command: ["/bin/sh", "-c"]
