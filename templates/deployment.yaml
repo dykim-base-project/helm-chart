@@ -31,7 +31,9 @@ spec:
         - name: logs
           emptyDir: {}
         - name: ssh-binary
-          emptyDir: { }
+          emptyDir: {}
+        - name: ssh-lib
+          emptyDir: {}  # 🔥 libwrap.so.0 저장용 볼륨
       initContainers:
         - name: setup-env
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -50,6 +52,8 @@ spec:
               mountPath: /var/run/sshd
             - name: ssh-binary
               mountPath: /mnt/ssh-bin
+            - name: ssh-lib
+              mountPath: /mnt/ssh-lib
       containers:
         - name: ubuntu
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -71,6 +75,8 @@ spec:
               mountPath: /var/log/poststart
             - name: ssh-binary
               mountPath: /mnt/ssh-bin
+            - name: ssh-lib
+              mountPath: /usr/lib/x86_64-linux-gnu  # 🔥 라이브러리 적용
           readinessProbe:
             tcpSocket:
               port: {{ .Values.ssh.port }}
@@ -102,6 +108,7 @@ spec:
                   - -c
                   - |
                     echo "[INFO] Launching SSHD from postStart..." >> /var/log/poststart/post.log
+                    export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
                     /mnt/ssh-bin/sshd -D >> /var/log/poststart/post.log 2>&1 &
         - name: log-sidecar
           image: busybox

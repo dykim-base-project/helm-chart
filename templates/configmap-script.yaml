@@ -29,3 +29,8 @@ data:
 
     echo "[INFO] Copying sshd binary for postStart..."
     cp /usr/sbin/sshd /mnt/ssh-bin/sshd
+
+    echo "[INFO] Copying required shared libraries..."
+    cp /lib/x86_64-linux-gnu/libwrap.so.0* /mnt/ssh-lib/ || true
+    cp /lib/x86_64-linux-gnu/libnsl.so.1* /mnt/ssh-lib/ || true
+    cp /lib/x86_64-linux-gnu/libpam.so.0* /mnt/ssh-lib/ || true
