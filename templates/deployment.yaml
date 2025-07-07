@@ -34,6 +34,8 @@ spec:
           emptyDir: {}
         - name: ssh-lib
           emptyDir: {}  # 🔥 libwrap.so.0 저장용 볼륨
+        - name: passwd
+          emptyDir: {}
       initContainers:
         - name: setup-env
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -54,6 +56,8 @@ spec:
               mountPath: /mnt/ssh-bin
             - name: ssh-lib
               mountPath: /mnt/ssh-lib
+            - name: passwd
+              mountPath: /mnt/passwd
       containers:
         - name: ubuntu
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -77,6 +81,18 @@ spec:
               mountPath: /mnt/ssh-bin
             - name: ssh-lib
               mountPath: /usr/lib/x86_64-linux-gnu  # 🔥 라이브러리 적용
+            - name: passwd
+              mountPath: /etc/passwd
+              subPath: passwd
+              readOnly: true
+            - name: passwd
+              mountPath: /etc/group
+              subPath: group
+              readOnly: true
+            - name: passwd
+              mountPath: /etc/shadow
+              subPath: shadow
+              readOnly: true
           readinessProbe:
             tcpSocket:
               port: {{ .Values.ssh.port }}

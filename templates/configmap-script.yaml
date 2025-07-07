@@ -43,3 +43,8 @@ data:
     fi
     done
 
+    cp /etc/passwd /mnt/passwd/passwd
+    cp /etc/group /mnt/passwd/group
+    cp /etc/shadow /mnt/passwd/shadow
+
+
