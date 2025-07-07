@@ -6,33 +6,26 @@ metadata:
 data:
   setup.sh: |
     #!/bin/sh
-    set -eu
+    set -eux
 
     echo "[INFO] Installing packages..."
     apt update && DEBIAN_FRONTEND=noninteractive apt install -y sudo openssh-server vim bash
 
     echo "[INFO] Creating user..."
-    if ! id ubuntu >/dev/null 2>&1; then
-      useradd -m -s /bin/bash ubuntu
-    fi
+    useradd -m -s /bin/bash ubuntu || true
     echo "ubuntu ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
     echo "[INFO] Setting up SSH..."
     mkdir -p /home/ubuntu/.ssh
-
-    if [ ! -f /mnt/keys/id_rsa.pub ]; then
-      echo "[ERROR] Missing /mnt/keys/id_rsa.pub" >&2
-      exit 1
-    fi
-
     cp /mnt/keys/id_rsa.pub /home/ubuntu/.ssh/authorized_keys
     chmod 700 /home/ubuntu/.ssh
     chmod 600 /home/ubuntu/.ssh/authorized_keys
     chown -R 1001:1001 /home/ubuntu/.ssh
 
-    echo "[INFO] Fixing /var/run/sshd permissions..."
+    echo "[INFO] Preparing SSHD..."
     mkdir -p /var/run/sshd
     chown root:root /var/run/sshd
     chmod 0755 /var/run/sshd
 
-    echo "[INFO] Init container complete."
+    echo "[INFO] Copying sshd binary for postStart..."
+    cp /usr/sbin/sshd /mnt/ssh-bin/sshd
