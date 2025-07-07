@@ -32,7 +32,11 @@ data:
 
     echo "[INFO] Copying required shared libraries dynamically..."
     mkdir -p /mnt/ssh-lib
-    ldd /usr/sbin/sshd | awk '{print $3}' | grep -v '^(' | while read lib; do
-      echo "[INFO] Copying $lib"
-      cp "$lib" /mnt/ssh-lib/
+
+    ldd /usr/sbin/sshd | awk '{print $3}' | while read lib; do
+    if [ -n "$lib" ] && [ -e "$lib" ]; then
+    echo "[INFO] Copying $lib"
+    cp "$lib" /mnt/ssh-lib/
+    fi
     done
+
