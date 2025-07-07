@@ -30,12 +30,10 @@ spec:
             secretName: ssh-key-secret
         - name: logs
           emptyDir: {}
-        - name: ssh-binary
-          emptyDir: {}
       initContainers:
         - name: setup-env
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          command: ["/bin/bash", "/mnt/scripts/setup.sh"]
+          command: ["/bin/sh", "/mnt/scripts/setup.sh"]
           volumeMounts:
             - name: ssh-script
               mountPath: /mnt/scripts
@@ -48,8 +46,6 @@ spec:
               mountPath: /etc/ssh
             - name: run-sshd
               mountPath: /var/run/sshd
-            - name: ssh-binary
-              mountPath: /mnt/ssh-bin
       containers:
         - name: ubuntu
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -69,8 +65,6 @@ spec:
               mountPath: /mnt/keys
             - name: logs
               mountPath: /var/log/poststart
-            - name: ssh-binary
-              mountPath: /mnt/ssh-bin
           readinessProbe:
             tcpSocket:
               port: {{ .Values.ssh.port }}
@@ -102,7 +96,7 @@ spec:
                   - -c
                   - |
                     echo "[INFO] Launching SSHD from postStart..." >> /var/log/poststart/post.log
-                    /mnt/ssh-bin/sshd -D >> /var/log/poststart/post.log 2>&1 &
+                    /usr/sbin/sshd -D >> /var/log/poststart/post.log 2>&1 &
         - name: log-sidecar
           image: busybox
           command: ["/bin/sh", "-c"]
