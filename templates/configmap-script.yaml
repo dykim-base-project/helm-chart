@@ -1,8 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ubuntu-ssh-init-script
-  namespace: sample
+  name: {{ include "chart.fullname" . }}-script
 data:
   setup.sh: |
     #!/bin/sh

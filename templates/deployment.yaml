@@ -1,14 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ubuntu-ssh
-  namespace: sample
+  name: {{ include "chart.fullname" . }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
 spec:
   revisionHistoryLimit: 3
   replicas: 1
   selector:
     matchLabels:
-      app: ubuntu-ssh
+      {{- include "chart.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
@@ -17,7 +18,7 @@ spec:
       volumes:
         - name: ssh-script
           configMap:
-            name: ubuntu-ssh-init-script
+            name: {{ include "chart.fullname" . }}-script
             defaultMode: 0755
         - name: rootfs
           emptyDir: {}
@@ -27,7 +28,7 @@ spec:
           emptyDir: {}
         - name: ssh-keys
           secret:
-            secretName: ssh-key-secret
+            secretName: {{ include "chart.fullname" . }}-ssh
         - name: logs
           emptyDir: {}
         - name: ssh-binary
