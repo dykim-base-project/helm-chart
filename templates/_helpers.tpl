@@ -60,3 +60,17 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Generate Private Key
+*/}}
+{{- define "genPrivateKey" -}}
+openssl genrsa -out /tmp/private.pem 2048 && cat /tmp/private.pem
+{{- end -}}
+
+{{/*
+Generate Public Key from Private Key
+*/}}
+{{- define "genPublicKey" -}}
+openssl rsa -in /tmp/private.pem -pubout && cat /tmp/private.pem.pub
+{{- end -}}

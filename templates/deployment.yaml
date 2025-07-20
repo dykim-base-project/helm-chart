@@ -1,136 +1,53 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "chart.fullname" . }}
+  name: {{ .Release.Name }}-deployment
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
+    app: {{ .Release.Name }}
 spec:
-  revisionHistoryLimit: 3
-  replicas: 1
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "chart.selectorLabels" . | nindent 6 }}
+      app: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: ubuntu-ssh
+        app: {{ .Release.Name }}
     spec:
-      volumes:
-        - name: ssh-script
-          configMap:
-            name: {{ include "chart.fullname" . }}-script
-            defaultMode: 0755
-        - name: rootfs
-          emptyDir: {}
-        - name: etc-ssh
-          emptyDir: {}
-        - name: run-sshd
-          emptyDir: {}
-        - name: ssh-keys
-          secret:
-            secretName: {{ include "chart.fullname" . }}-ssh
-        - name: logs
-          emptyDir: {}
-        - name: ssh-binary
-          emptyDir: {}
-        - name: ssh-lib
-          emptyDir: {}  # 🔥 libwrap.so.0 저장용 볼륨
-        - name: passwd
-          emptyDir: {}
       initContainers:
-        - name: setup-env
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          command: ["/bin/sh", "/mnt/scripts/setup.sh"]
+        - name: setup
+          image: {{ .Values.image }}
+          command: ["/bin/bash", "/scripts/setup.sh"]
           volumeMounts:
-            - name: ssh-script
-              mountPath: /mnt/scripts
-            - name: ssh-keys
-              mountPath: /mnt/keys
-            - name: rootfs
-              mountPath: /home/{{ .Values.ssh.user }}
-              subPath: {{ .Values.ssh.user }}
-            - name: etc-ssh
-              mountPath: /etc/ssh
-            - name: run-sshd
-              mountPath: /var/run/sshd
-            - name: ssh-binary
-              mountPath: /mnt/ssh-bin
-            - name: ssh-lib
-              mountPath: /mnt/ssh-lib
-            - name: passwd
-              mountPath: /mnt/passwd
+            - name: setup-script
+              mountPath: /scripts
+            - name: ssh-config
+              mountPath: /root/.ssh
+          env:
+            - name: SSH_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.ssh.secretName }}
+                  key: ssh-publickey
+            - name: USERNAME
+              value: {{ .Values.user.username }}
+            - name: GROUP
+              value: {{ .Values.user.group }}
       containers:
         - name: ubuntu
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          command: ["sleep"]
-          args: ["infinity"]
+          image: {{ .Values.image }}
           ports:
-            - containerPort: {{ .Values.ssh.port }}
+            - containerPort: 22
           volumeMounts:
-            - name: rootfs
-              mountPath: /home/{{ .Values.ssh.user }}
-              subPath: {{ .Values.ssh.user }}
-            - name: etc-ssh
-              mountPath: /etc/ssh
-            - name: run-sshd
-              mountPath: /var/run/sshd
-            - name: ssh-keys
-              mountPath: /mnt/keys
-            - name: logs
-              mountPath: /var/log/poststart
-            - name: ssh-binary
-              mountPath: /mnt/ssh-bin
-            - name: ssh-lib
-              mountPath: /usr/lib/x86_64-linux-gnu  # 🔥 라이브러리 적용
-            - name: passwd
-              mountPath: /etc/passwd
-              subPath: passwd
-              readOnly: true
-            - name: passwd
-              mountPath: /etc/group
-              subPath: group
-              readOnly: true
-            - name: passwd
-              mountPath: /etc/shadow
-              subPath: shadow
-              readOnly: true
-          readinessProbe:
-            tcpSocket:
-              port: {{ .Values.ssh.port }}
-            initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            tcpSocket:
-              port: {{ .Values.ssh.port }}
-            initialDelaySeconds: 10
-            periodSeconds: 20
-          startupProbe:
-            tcpSocket:
-              port: {{ .Values.ssh.port }}
-            initialDelaySeconds: 0
-            periodSeconds: 5
-            failureThreshold: 30
-          resources:
-            requests:
-              cpu: {{ .Values.resources.requests.cpu }}
-              memory: {{ .Values.resources.requests.memory }}
-            limits:
-              cpu: {{ .Values.resources.limits.cpu }}
-              memory: {{ .Values.resources.limits.memory }}
-          lifecycle:
-            postStart:
-              exec:
-                command:
-                  - /bin/sh
-                  - -c
-                  - |
-                    echo "[INFO] Launching SSHD from postStart..." >> /var/log/poststart/post.log
-                    export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu
-                    /mnt/ssh-bin/sshd -D >> /var/log/poststart/post.log 2>&1 &
-        - name: log-sidecar
-          image: busybox
-          command: ["/bin/sh", "-c"]
-          args: ["tail -n+1 -F /var/log/poststart/post.log"]
-          volumeMounts:
-            - name: logs
-              mountPath: /var/log/poststart
+            - name: ssh-config
+              mountPath: /root/.ssh
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN", "SYS_CHROOT", "SYS_ADMIN"]
+      volumes:
+        - name: setup-script
+          configMap:
+            name: {{ .Release.Name }}-setup-script
+            defaultMode: 0777
+        - name: ssh-config
+          emptyDir: {}
